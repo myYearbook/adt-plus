@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Format an Android resource XML file to a cleaner look than the typical one-attribute-per-line format
+# described/seen in other Android XML files
+#
+# Contributors:
+# - Dallas Gutauckis <dallas@myyearbook.com>
+#
+
+file=$1
+
+if [ ! -f $file ]; then
+  echo "Specified file \"${file}\" does not exist.";
+  exit 1;
+fi;
+
+tmpFile="/tmp/${file}"
+
+cp "${file}" "${tmpFile}"
+
+xmllint "${tmpFile}" > "${file}"

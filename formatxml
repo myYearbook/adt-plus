@@ -16,6 +16,10 @@ fi;
 
 tmpFile="/tmp/${file}"
 
+# Copy the original to tmp for formatting (can't output to the same file we're linting)
 cp "${file}" "${tmpFile}"
 
+# run xmllint, which reformats the XML to be multiple attributes inline
 xmllint "${tmpFile}" > "${file}"
+
+rm "${tmpFile}"

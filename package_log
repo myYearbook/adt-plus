@@ -1,0 +1,54 @@
+#!/bin/sh
+## Restrict logcat output to a given package name's process
+##
+## Usage:  package_log <package name> [-d | -e | -s <serial>]
+##
+## Example:
+##   $ package_log com.myyearbook.m -d
+##
+## Shows all logcat messages for the currently-running (on the physically-
+## connected device) com.myyearbook.m application process.  If the application
+## is not already running, waits until the application is launched.
+##
+## Tested on Mac OS X 10.7
+## Author: Joe Hansche <jhansche@myyearbook.com>
+
+# If adb is not in path, update this to the full path:
+ADB="adb"
+
+PNAME=${1:?"Usage: $0 <package name> [-d | -e | -s <serial>]"}
+
+case ${2} in
+  -d|-e)
+    ADB="${ADB} ${2}"
+    ;;
+  -s)
+    ADB="${ADB} ${2} ${3:?"Option -s requires <serial number>"}"
+    ;;
+esac
+
+echo "Checking if ${PNAME} is currently running..."
+
+# Android doesn't have 'pgrep'
+#PID=$(${ADB} shell pgrep "${PNAME}")
+
+PSLINE=$(${ADB} shell ps | grep "${PNAME}")
+
+if [ ! -z "${PSLINE}" ]; then
+  PID=$(echo ${PSLINE} | cut -d' ' -f 2)
+  echo "Application is already running;  pid=${PID}"
+else
+  # Would like to find a way to ensure logcat doesn't show *old* entries.
+  # I don't like requiring a log clear.
+  # See featreq at http://code.google.com/p/android/issues/detail?id=19044
+  ${ADB} logcat -c
+
+  echo "Waiting for ${PNAME} to start..."
+
+  PIDLINE=$(${ADB} logcat -v time | grep -m 1 "Start proc ${PNAME}")
+  PID=$(echo ${PIDLINE} | cut -d '=' -f 2 | cut -d' ' -f 1)
+  echo "... application has started;  pid=${PID}"
+fi
+
+echo "Filtering logcat to pid=${PID}"
+${ADB} logcat -v time | grep ${PID}
